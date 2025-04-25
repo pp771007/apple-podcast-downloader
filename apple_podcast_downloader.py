@@ -1,6 +1,7 @@
 import feedparser
 import requests
 import os
+import sys
 import re # 用於清理檔案名稱和提取 ID
 import json # 用於解析 API 回應
 
@@ -162,7 +163,14 @@ def download_podcast_episodes(feed_url, download_folder="podcast_downloads"):
             if os.path.exists(filepath):
                 os.remove(filepath)
 
+    total_episodes = len(feed.entries)
+    downloaded_count = len([entry for entry in feed.entries if not os.path.exists(os.path.join(full_download_path, sanitize_filename(entry.get('title', 'Untitled_Episode') + ".mp3")))])
+    existing_count = total_episodes - downloaded_count
+
     print("\n[*] 所有節目處理完成。")
+    print(f"[*] 本次下載: {downloaded_count} 集")
+    print(f"[*] 已存在: {existing_count} 集")
+    print(f"[*] 節目總數: {total_episodes} 集")
 
 
 # --- 主程式執行區塊 ---
@@ -172,7 +180,10 @@ if __name__ == "__main__":
     print("請提供 Apple Podcast 的網頁連結，程式會嘗試自動尋找 RSS Feed。")
     print("-" * 60)
 
-    apple_podcast_url = input("請輸入 Apple Podcast 的網址 (例如: https://podcasts.apple.com/tw/podcast/abc/id123456789): \n> ")
+    if len(sys.argv) > 1:
+        apple_podcast_url = sys.argv[1]
+    else:
+        apple_podcast_url = input("請輸入 Apple Podcast 的網址 (例如: https://podcasts.apple.com/tw/podcast/abc/id123456789): \n> ")
 
     if not apple_podcast_url or not apple_podcast_url.strip():
         print("[!] 未輸入網址，程式結束。")
