@@ -131,7 +131,8 @@ def download_podcast_episodes(feed_url, download_folder="podcast_downloads"):
             # 獲取檔案總大小
             total_size = int(response.headers.get('content-length', 0))
             downloaded_size = 0
-            block_size = 8192 # 每次讀取的區塊大小 (8KB)
+            block_size = 1048576 # 每次讀取的區塊大小 (1MB)
+            MB = 1024 * 1024 # 定義 MB 的 Bytes 數
 
             with open(filepath, 'wb') as f:
                 # 使用 iter_content 迭代下載內容
@@ -143,14 +144,28 @@ def download_podcast_episodes(feed_url, download_folder="podcast_downloads"):
                         if total_size > 0:
                             # 計算進度百分比，並縮放到 50 個字元的寬度
                             progress = int(50 * downloaded_size / total_size)
+                            # 將 Bytes 轉換為 MB，保留兩位小數
+                            downloaded_mb = downloaded_size / MB
+                            total_mb = total_size / MB
                             # 使用 \r 回車符回到行首，end="" 阻止換行，實現原地更新
-                            print(f"\r    進度: [{'#' * progress}{'.' * (50 - progress)}] {downloaded_size}/{total_size} Bytes", end="")
+                            print(f"\r    進度: [{'#' * progress}{'.' * (50 - progress)}] {downloaded_mb:.2f}/{total_mb:.2f} MB", end="")
                         else:
                             # 如果無法獲取 total_size，只顯示已下載大小
-                            print(f"\r    進度: {downloaded_size} Bytes", end="")
+                            # 將 Bytes 轉換為 MB，保留兩位小數
+                            downloaded_mb = downloaded_size / MB
+                            print(f"\r    進度: {downloaded_mb:.2f} MB", end="")
 
-            # *** 下載完成後，換行，避免下一個輸出接在進度條後面 ***
-            print()
+            # 下載完成後，打印最終狀態並換行
+            if total_size > 0:
+                downloaded_mb = downloaded_size / MB
+                total_mb = total_size / MB
+                # 確保最後顯示 100% 填滿
+                print(f"\r    進度: [{'#' * 50}{'.' * 0}] {downloaded_mb:.2f}/{total_mb:.2f} MB", end="")
+            else:
+                downloaded_mb = downloaded_size / MB
+                print(f"\r    進度: {downloaded_mb:.2f} MB", end="")
+
+            print() # 換行，避免後續輸出接在同一行
             print(f"  [+] 下載完成: {filename}")
             downloaded_count += 1
 
