@@ -93,6 +93,9 @@ def download_podcast_episodes(feed_url, download_folder="podcast_downloads"):
         print("[!] 在 Feed 中找不到任何節目集數。")
         return
 
+    downloaded_count = 0
+    skipped_count = 0
+    failed_count = 0
     print(f"[*] 共找到 {len(feed.entries)} 集節目。")
 
     for entry in feed.entries:
@@ -117,6 +120,7 @@ def download_podcast_episodes(feed_url, download_folder="podcast_downloads"):
 
         if os.path.exists(filepath):
             print(f"  [*] 檔案已存在: {filename}。跳過下載。")
+            skipped_count += 1
             continue
 
         print(f"  [*] 正在下載: {filename}")
@@ -148,29 +152,30 @@ def download_podcast_episodes(feed_url, download_folder="podcast_downloads"):
             # *** 下載完成後，換行，避免下一個輸出接在進度條後面 ***
             print()
             print(f"  [+] 下載完成: {filename}")
+            downloaded_count += 1
 
         except requests.exceptions.Timeout:
             # 在錯誤訊息前加換行，確保它不會接在進度條後面
             print(f"\n  [!] 下載超時 ({mp3_url})。")
             if os.path.exists(filepath):
                 os.remove(filepath)
+            failed_count += 1
         except requests.exceptions.RequestException as e:
             print(f"\n  [!] 下載時發生錯誤 ({mp3_url}): {e}")
             if os.path.exists(filepath):
                 os.remove(filepath)
+            failed_count += 1
         except Exception as e:
             print(f"\n  [!] 處理下載時發生未知錯誤: {e}")
             if os.path.exists(filepath):
                 os.remove(filepath)
-
-    total_episodes = len(feed.entries)
-    downloaded_count = len([entry for entry in feed.entries if not os.path.exists(os.path.join(full_download_path, sanitize_filename(entry.get('title', 'Untitled_Episode') + ".mp3")))])
-    existing_count = total_episodes - downloaded_count
+            failed_count += 1
 
     print("\n[*] 所有節目處理完成。")
     print(f"[*] 本次下載: {downloaded_count} 集")
-    print(f"[*] 已存在: {existing_count} 集")
-    print(f"[*] 節目總數: {total_episodes} 集")
+    print(f"[*] 跳過: {skipped_count} 集")
+    print(f"[*] 下載失敗: {failed_count} 集")
+    print(f"[*] 節目總數: {len(feed.entries)} 集")
 
 
 # --- 主程式執行區塊 ---
